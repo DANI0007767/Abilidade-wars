@@ -198,3 +198,5 @@ print(" Monitorando habilidades em tempo real...")
 -- Exportar funções para uso externo
 _G.HabilitWars.Logic.setupJogador = setupJogador
 _G.HabilitWars.Logic.pegarHabilidade = pegarHabilidade
+
+a
