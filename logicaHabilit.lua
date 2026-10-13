@@ -199,4 +199,3 @@ print(" Monitorando habilidades em tempo real...")
 _G.HabilitWars.Logic.setupJogador = setupJogador
 _G.HabilitWars.Logic.pegarHabilidade = pegarHabilidade
 
-a
