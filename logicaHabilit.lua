@@ -1,235 +1,200 @@
--- SISTEMA COMPLETO DE EXIBIÇÃO DE HABILIDADE
+-- SISTEMA DE EXIBIÇÃO DE HABILIDADE - ABILITY WARS
 -- Autor: Sistema de Desenvolvimento
 -- Objetivo: Mostrar habilidade do jogador acima da cabeça
+--logicaHabilit.lua
 
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- Palavras-chave para detectar habilidades automaticamente
-local palavrasChave = {
-    "ability", "skill", "power", "move", "current", "habilit", "poder", "habilidade"
+-- Criar estrutura global para export
+_G.HabilitWars = _G.HabilitWars or {}
+_G.HabilitWars.Logic = _G.HabilitWars.Logic or {}
+
+-- 🎨 Cores personalizadas das habilidades (NOMES REAIS EM INGLÊS)
+local coresHabilidades = {
+    -- 🔥 PODERES OFENSIVOS (VERMELHO)
+    ["God Punch"] = Color3.fromRGB(255,0,0),
+    ["Meteor"] = Color3.fromRGB(255,0,0),
+    ["Explosion"] = Color3.fromRGB(255,0,0),
+    ["Fury"] = Color3.fromRGB(255,0,0),
+    ["Lightning"] = Color3.fromRGB(255,0,0),
+    
+    -- 🟡 PODERES DE CONTROLE/UTILIDADE (AMARELO - PLAMAS)
+    ["Glue"] = Color3.fromRGB(255,255,0),
+    ["Cards"] = Color3.fromRGB(255,255,0),
+    ["Soul Stealer"] = Color3.fromRGB(255,255,0),
+    ["Time"] = Color3.fromRGB(255,255,0),
+    ["Quantum"] = Color3.fromRGB(255,255,0),
+    ["Railgun"] = Color3.fromRGB(255,255,0),
+    ["Plasma"] = Color3.fromRGB(255,255,0),
+    ["Engineer"] = Color3.fromRGB(255,255,0),
+    ["Alchemist"] = Color3.fromRGB(255,255,0),
+    ["Teleport"] = Color3.fromRGB(255,255,0),
+    ["Freeze"] = Color3.fromRGB(255,255,0),
+    ["Stun"] = Color3.fromRGB(255,255,0),
+    ["Slow"] = Color3.fromRGB(255,255,0),
+    ["Magnet"] = Color3.fromRGB(255,255,0),
+    ["Seat"] = Color3.fromRGB(255,255,0),
+    
+    -- 🔵 PODERES DE DEFESA (AZUL)
+    ["Shield"] = Color3.fromRGB(0,100,255),
+    ["Protection"] = Color3.fromRGB(0,100,255),
+    ["Invisibility"] = Color3.fromRGB(0,100,255),
+    ["Barrier"] = Color3.fromRGB(0,100,255),
+    
+    -- 🟢 PODERES DE CURA/SUPORTE (VERDE)
+    ["Heal"] = Color3.fromRGB(0,255,0),
+    ["Life"] = Color3.fromRGB(0,255,0),
+    ["Regeneration"] = Color3.fromRGB(0,255,0),
+    ["Support"] = Color3.fromRGB(0,255,0),
+    
+    -- 🟣 PODERES ESPECIAIS (ROXO)
+    ["Fly"] = Color3.fromRGB(150,0,255),
+    ["Super Jump"] = Color3.fromRGB(150,0,255),
+    ["Speed"] = Color3.fromRGB(150,0,255),
+    ["Strength"] = Color3.fromRGB(150,0,255),
+    
+    -- ⚫ PODERES NEUTROS/OUTROS (PRETO)
+    ["Hold"] = Color3.fromRGB(0,0,0),
+    ["Push"] = Color3.fromRGB(0,0,0),
+    ["Basic"] = Color3.fromRGB(0,0,0),
+    ["None"] = Color3.fromRGB(128,128,128) -- Cinza para habilidade vazia
 }
 
--- Função para verificar se nome contém palavra-chave
-local function contemPalavraChave(nome)
-    local nomeLower = string.lower(nome)
-    for _, palavra in pairs(palavrasChave) do
-        if string.find(nomeLower, palavra) then
-            return true
-        end
-    end
-    return false
-end
-
--- 🔧 Modificação 1 — Detectar Tool (habilidade) OTIMIZADO
+-- Função otimizada para Ability Wars - Pega habilidade do leaderstats
 local function pegarHabilidade(player)
-    local character = player.Character
-    if not character then return "Nenhuma" end
-    
-    -- Procurar Tools equipadas no Character
-    for _, obj in pairs(character:GetChildren()) do
-        if obj:IsA("Tool") then
-            return obj.Name
-        end
+    local leaderstats = player:FindFirstChild("leaderstats")
+    if not leaderstats then
+        return "None"
     end
-    
-    -- 2️⃣ Verificar Tools no Backpack (melhoria)
-    local backpack = player:FindFirstChild("Backpack")
-    if backpack then
-        for _, tool in pairs(backpack:GetChildren()) do
-            if tool:IsA("Tool") then
-                return tool.Name
-            end
-        end
+
+    local ability = leaderstats:FindFirstChild("Ability")
+    if ability then
+        return tostring(ability.Value)
     end
-    
-    -- Se não encontrar Tool, verificar Attributes
-    local attrs = character:GetAttributes()
-    for nomeAttr, valor in pairs(attrs) do
-        if contemPalavraChave(nomeAttr) then
-            return valor and tostring(valor) or "Nenhuma"
-        end
-    end
-    
-    -- 3️⃣ Verificar Values com segurança (bug fix)
-    for _, filho in pairs(character:GetChildren()) do
-        if filho:IsA("StringValue") or filho:IsA("ObjectValue") then
-            if contemPalavraChave(filho.Name) then
-                return filho.Value and tostring(filho.Value) or "Nenhuma"
-            end
-        end
-    end
-    
-    return "Nenhuma"
+
+    return "None"
 end
 
--- PASSO 3: Detectar o personagem
--- PASSO 4: Criar o texto acima da cabeça (BillboardGui)
--- PASSO 5: Criar o texto da habilidade
+-- Sistema de monitoramento com evento (mais eficiente que loop)
+local function monitorarHabilidade(player, textLabel)
+
+    local leaderstats = player:WaitForChild("leaderstats", 5)
+    if not leaderstats then return end
+    
+    local ability = leaderstats:WaitForChild("Ability", 5)
+    if not ability then return end
+
+    local function atualizar()
+
+        local habilidade = tostring(ability.Value)
+        textLabel.Text = habilidade
+
+        -- NORMALIZAÇÃO (ANTI BUG DE NOME)
+        local habilidadeFormatada = string.lower(habilidade)
+        habilidadeFormatada = habilidadeFormatada:gsub("%s+", "")
+        habilidadeFormatada = habilidadeFormatada:gsub("%p+", "")
+
+        local cor = nil
+
+        for nome, corTabela in pairs(coresHabilidades) do
+            local nomeFormatado = string.lower(nome)
+            nomeFormatado = nomeFormatado:gsub("%s+", "")
+            nomeFormatado = nomeFormatado:gsub("%p+", "")
+            
+            if nomeFormatado == habilidadeFormatada then
+                cor = corTabela
+                break
+            end
+        end
+
+        if cor then
+            textLabel.TextColor3 = cor
+        else
+            textLabel.TextColor3 = Color3.new(1,1,1)
+        end
+
+    end
+
+    atualizar()
+
+    ability:GetPropertyChangedSignal("Value"):Connect(atualizar)
+
+end
+
+-- Criar texto acima da cabeça
 local function criarTextoHabilidade(player)
+
+    -- Verificar se ESP está ativado pela GUI
+    if getgenv().AbilityESP == false then
+        return
+    end
+
     local character = player.Character
     if not character then return end
-    
+
     local head = character:FindFirstChild("Head")
     if not head then return end
-    
-    -- Evitar criar duplicados
+
     if head:FindFirstChild("AbilityDisplay") then return end
-    
-    -- Criar BillboardGui com melhorias visuais
+
     local gui = Instance.new("BillboardGui")
     gui.Name = "AbilityDisplay"
-    gui.Size = UDim2.new(0, 200, 0, 50) -- Aumentado altura para 2 linhas
-    gui.StudsOffset = Vector3.new(0, 3.5, 0) -- Subiu um pouco
+    gui.Adornee = head
+    gui.Size = UDim2.new(0,80,0,20)
+    gui.StudsOffset = Vector3.new(0,2.5,0)
     gui.AlwaysOnTop = true
-    gui.MaxDistance = 200 -- Dobrou distância de visão
-    
-    -- Criar TextLabel com melhorias
-    local text = Instance.new("TextLabel")
-    text.Size = UDim2.new(1, 0, 1, 0)
-    text.BackgroundTransparency = 1
-    text.TextScaled = true
-    text.TextStrokeTransparency = 0
-    text.Font = Enum.Font.GothamBold
-    text.TextColor3 = Color3.new(1, 1, 1) -- Branco
-    text.TextStrokeColor3 = Color3.new(0, 0, 0) -- Preto
-    text.TextWrapped = true -- Habilitar multilinha
-    
-    -- � Melhor melhoria: Nome + Habilidade
-    text.Text = player.Name .. "\n" .. pegarHabilidade(player)
-    
-    text.Parent = gui
+    gui.MaxDistance = 150
     gui.Parent = head
-    
-    -- 1️⃣ Otimização: Loop mais rápido (0.5s)
-    task.spawn(function()
-        while gui and gui.Parent do
-            text.Text = player.Name .. "\n" .. pegarHabilidade(player)
-            task.wait(0.5) -- Atualiza a cada 0.5 segundos
-        end
-    end)
-    
-    print("✅ Display de habilidade criado para: " .. player.Name)
+
+    local text = Instance.new("TextLabel")
+    text.Size = UDim2.new(1,0,1,0)
+    text.BackgroundTransparency = 1
+    text.TextScaled = false
+    text.TextSize = 11
+    text.Font = Enum.Font.GothamBold
+    text.TextColor3 = Color3.new(1,1,1)
+    text.TextStrokeTransparency = 0
+    text.TextStrokeColor3 = Color3.new(0,0,0)
+    text.Text = pegarHabilidade(player)
+    text.Parent = gui
+
+    monitorarHabilidade(player,text)
+
 end
 
 -- Sistema principal
 local function setupJogador(player)
-    -- Se já tem character, criar display
-    if player.Character then
-        criarTextoHabilidade(player)
-    end
-    
-    -- Monitorar quando o character for adicionado/respawn
+    -- Configurar evento CharacterAdded primeiro
     player.CharacterAdded:Connect(function(character)
         task.wait(1) -- Esperar character carregar
         criarTextoHabilidade(player)
     end)
-end
 
--- Sistema de exploração (PASSO 1 & 2)
-local function explorarObjeto(objeto, nome, nivel)
-    local indent = string.rep("  ", nivel)
-    
-    -- Detectar possíveis habilidades automaticamente
-    if contemPalavraChave(nome) then
-        print(indent .. "⚠️ POSSÍVEL HABILIDADE: " .. nome .. " (" .. objeto.ClassName .. ")")
-    else
-        print(indent .. "📁 " .. nome .. " (" .. objeto.ClassName .. ")")
+    -- Se já tem character, criar display
+    if player.Character then
+        criarTextoHabilidade(player)
     end
-    
-    -- Verificar Attributes (corrigido com next())
-    local attrs = objeto:GetAttributes()
-    if next(attrs) then
-        print(indent .. "  🏷️ Attributes:")
-        for nomeAttr, valor in pairs(attrs) do
-            if contemPalavraChave(nomeAttr) then
-                print(indent .. "    ⚠️ POSSÍVEL HABILIDADE - " .. nomeAttr .. ": " .. tostring(valor))
-            else
-                print(indent .. "    - " .. nomeAttr .. ": " .. tostring(valor))
-            end
-        end
-    end
-    
-    -- Verificar Values importantes com detecção automática
-    for _, filho in pairs(objeto:GetChildren()) do
-        if filho:IsA("StringValue") or filho:IsA("IntValue") or filho:IsA("ObjectValue") then
-            local prefix = contemPalavraChave(filho.Name) and "⚠️ POSSÍVEL HABILIDADE" or "💎"
-            print(indent .. "  " .. prefix .. " " .. filho.Name .. " = " .. tostring(filho.Value))
-        end
-    end
-    
-    -- Explorar filhos recursivamente (com limite de profundidade)
-    for _, filho in pairs(objeto:GetChildren()) do
-        if nivel < 3 then -- Limite para evitar poluição
-            explorarObjeto(filho, filho.Name, nivel + 1)
-        end
-    end
-end
-
--- Função principal para explorar jogadores
-local function explorarJogadores()
-    print("🔍 INICIANDO EXPLORAÇÃO DO JOGO")
-    print("=" .. string.rep("=", 50))
-    
-    for _, player in pairs(Players:GetPlayers()) do
-        print("\n👤 JOGADOR: " .. player.Name)
-        print("-" .. string.rep("-", 30))
-        
-        -- Explorar o Player
-        explorarObjeto(player, "Player", 0)
-        
-        -- Explorar o Character se existir
-        local character = player.Character
-        if character then
-            print("\n🎭 CHARACTER:")
-            explorarObjeto(character, "Character", 0)
-            
-            -- Verificar Backpack (habilidades podem estar aqui)
-            local backpack = player:FindFirstChild("Backpack")
-            if backpack then
-                print("\n🎒 BACKPACK:")
-                explorarObjeto(backpack, "Backpack", 0)
-            end
-        end
-        
-        -- Verificar leaderstats
-        local leaderstats = player:FindFirstChild("leaderstats")
-        if leaderstats then
-            print("\n📊 LEADERSTATS:")
-            explorarObjeto(leaderstats, "leaderstats", 0)
-        end
-        
-        -- Verificar PlayerGui (MUITO IMPORTANTE - habilidades podem estar aqui)
-        local playerGui = player:FindFirstChild("PlayerGui")
-        if playerGui then
-            print("\n🖥️ PLAYERGUI:")
-            explorarObjeto(playerGui, "PlayerGui", 0)
-        end
-    end
-    
-    -- Explorar ReplicatedStorage (pode ter sistemas de habilidade)
-    print("\n🌐 REPLICATEDSTORAGE:")
-    explorarObjeto(ReplicatedStorage, "ReplicatedStorage", 0)
 end
 
 -- INICIALIZAÇÃO DO SISTEMA
+print(" SISTEMA ABILITY WARS ATIVADO!")
 
--- 1. Executar exploração inicial
-explorarJogadores()
+-- Aplicar para todos os jogadores atuais (só se ESP estiver ativo)
+if getgenv().AbilityESP then
+    for _, player in pairs(Players:GetPlayers()) do
+        setupJogador(player)
+    end
+end
 
--- 2. Detectar novos jogadores automaticamente
+-- Detectar novos jogadores
 Players.PlayerAdded:Connect(function(player)
-    task.wait(3) -- Esperar 3 segundos para o jogador carregar completamente
-    print("\n🆕 NOVO JOGADOR DETECTADO: " .. player.Name)
-    explorarJogadores()
+    task.wait(3) -- Esperar jogador carregar
     setupJogador(player)
 end)
 
--- 3. Aplicar para todos os jogadores atuais
-for _, player in pairs(Players:GetPlayers()) do
-    setupJogador(player)
-end
+print(" Sistema pronto para uso!")
+print(" Monitorando habilidades em tempo real...")
 
-print("\n✅ SISTEMA COMPLETO ATIVADO!")
-print("📝 Procure por termos marcados com ⚠️ POSSÍVEL HABILIDADE")
-print("🔄 Script monitorando novos jogadores e exibindo habilidades automaticamente...")
+-- Exportar funções para uso externo
+_G.HabilitWars.Logic.setupJogador = setupJogador
+_G.HabilitWars.Logic.pegarHabilidade = pegarHabilidade
